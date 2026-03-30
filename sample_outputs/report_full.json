@@ -1,0 +1,363 @@
+{
+  "generated_at": "2026-03-30T10:00:00+00:00",
+  "total_repos": 5,
+  "summary": {
+    "beginner": 2,
+    "intermediate": 1,
+    "advanced": 2,
+    "errors": 0
+  },
+  "repositories": [
+    {
+      "repository": {
+        "full_name": "c2siorg/Webiu",
+        "url": "https://github.com/c2siorg/Webiu",
+        "description": "WebiU - Gatsby based website engine for GitHub organizations",
+        "primary_language": "JavaScript",
+        "languages": {
+          "JavaScript": 284210,
+          "CSS": 41823,
+          "HTML": 8204,
+          "Shell": 1100
+        },
+        "topics": ["gatsby", "react", "github-api", "organization", "website"],
+        "license": "Apache-2.0",
+        "is_archived": false,
+        "is_fork": false,
+        "age_days": 1680,
+        "days_since_last_push": 18,
+        "stars": 68,
+        "forks": 142,
+        "contributors_count": 8,
+        "commits_30d": 6,
+        "open_issues": 12,
+        "closed_issues_30d": 4,
+        "open_prs": 2,
+        "merged_prs_30d": 3,
+        "file_count": 284,
+        "repo_size_kb": 8420,
+        "dependency_files": ["package.json", "yarn.lock"],
+        "tech_ecosystems": ["npm"],
+        "fetch_errors": []
+      },
+      "scores": {
+        "activity_score": 38.4,
+        "activity_breakdown": {
+          "commit_volume (25pts)": 13.1,
+          "commit_regularity (20pts)": 11.4,
+          "issue_resolution_rate (20pts)": 8.0,
+          "pr_merge_rate (15pts)": 7.9,
+          "contributor_health (10pts)": 4.8,
+          "community_signal (10pts)": 4.2,
+          "recency_decay_factor": 0.671,
+          "raw_before_decay": 57.2
+        },
+        "complexity_score": 22.7,
+        "complexity_breakdown": {
+          "language_entropy (30pts)": 8.4,
+          "tech_ecosystem_breadth (25pts)": 5.0,
+          "codebase_depth_files (20pts)": 9.8,
+          "age_normalized_size (15pts)": 6.1,
+          "dependency_surface (10pts)": 2.5,
+          "raw_entropy_value": 0.6621,
+          "ecosystem_count": 1
+        }
+      },
+      "classification": {
+        "difficulty": "Beginner",
+        "confidence": "HIGH"
+      },
+      "observations": [
+        "Moderate activity with 6 commits in the last 30 days.",
+        "Small team (8 contributors) — intimate but potentially fragile.",
+        "Single dependency ecosystem (npm) — straightforward setup.",
+        "Good first-contribution target: low complexity, small team, accessible codebase.",
+        "Note: Last push was 18 days ago — slight recency penalty applied."
+      ],
+      "error": null
+    },
+    {
+      "repository": {
+        "full_name": "pallets/flask",
+        "url": "https://github.com/pallets/flask",
+        "description": "The Python micro framework for building web applications.",
+        "primary_language": "Python",
+        "languages": {
+          "Python": 361840,
+          "HTML": 18420,
+          "JavaScript": 4100,
+          "CSS": 2210
+        },
+        "topics": ["flask", "python", "web-framework", "wsgi", "pallets"],
+        "license": "BSD-3-Clause",
+        "is_archived": false,
+        "is_fork": false,
+        "age_days": 5110,
+        "days_since_last_push": 4,
+        "stars": 68000,
+        "forks": 16200,
+        "contributors_count": 752,
+        "commits_30d": 18,
+        "open_issues": 8,
+        "closed_issues_30d": 22,
+        "open_prs": 4,
+        "merged_prs_30d": 9,
+        "file_count": 312,
+        "repo_size_kb": 9840,
+        "dependency_files": ["requirements.txt", "setup.cfg", "pyproject.toml"],
+        "tech_ecosystems": ["pip"],
+        "fetch_errors": []
+      },
+      "scores": {
+        "activity_score": 52.1,
+        "activity_breakdown": {
+          "commit_volume (25pts)": 17.8,
+          "commit_regularity (20pts)": 13.2,
+          "issue_resolution_rate (20pts)": 17.3,
+          "pr_merge_rate (15pts)": 9.6,
+          "contributor_health (10pts)": 8.9,
+          "community_signal (10pts)": 9.4,
+          "recency_decay_factor": 0.916,
+          "raw_before_decay": 56.9
+        },
+        "complexity_score": 44.3,
+        "complexity_breakdown": {
+          "language_entropy (30pts)": 7.2,
+          "tech_ecosystem_breadth (25pts)": 5.0,
+          "codebase_depth_files (20pts)": 10.4,
+          "age_normalized_size (15pts)": 5.8,
+          "dependency_surface (10pts)": 3.75,
+          "raw_entropy_value": 0.5812,
+          "ecosystem_count": 1
+        }
+      },
+      "classification": {
+        "difficulty": "Intermediate",
+        "confidence": "HIGH"
+      },
+      "observations": [
+        "Consistently active with 18 commits in the last 30 days.",
+        "Excellent maintainer responsiveness: 73% issue resolution rate.",
+        "Large contributor base (752) — mature, community-driven project.",
+        "Single-language codebase (Python) — easier to get started.",
+        "Reasonable entry point for developers with some OSS experience.",
+        "Microframework design keeps structural complexity low despite high community activity."
+      ],
+      "error": null
+    },
+    {
+      "repository": {
+        "full_name": "django/django",
+        "url": "https://github.com/django/django",
+        "description": "The Web framework for perfectionists with deadlines.",
+        "primary_language": "Python",
+        "languages": {
+          "Python": 14820400,
+          "HTML": 1240300,
+          "JavaScript": 820100,
+          "CSS": 241800,
+          "Shell": 12400
+        },
+        "topics": ["django", "python", "web-framework", "orm", "mvc"],
+        "license": "BSD-3-Clause",
+        "is_archived": false,
+        "is_fork": false,
+        "age_days": 7340,
+        "days_since_last_push": 1,
+        "stars": 81000,
+        "forks": 31400,
+        "contributors_count": 2983,
+        "commits_30d": 87,
+        "open_issues": 185,
+        "closed_issues_30d": 210,
+        "open_prs": 28,
+        "merged_prs_30d": 64,
+        "file_count": 5480,
+        "repo_size_kb": 141200,
+        "dependency_files": ["requirements.txt", "setup.cfg", "pyproject.toml", "package.json"],
+        "tech_ecosystems": ["pip", "npm"],
+        "fetch_errors": []
+      },
+      "scores": {
+        "activity_score": 78.6,
+        "activity_breakdown": {
+          "commit_volume (25pts)": 22.4,
+          "commit_regularity (20pts)": 16.8,
+          "issue_resolution_rate (20pts)": 17.8,
+          "pr_merge_rate (15pts)": 12.9,
+          "contributor_health (10pts)": 9.8,
+          "community_signal (10pts)": 9.6,
+          "recency_decay_factor": 0.978,
+          "raw_before_decay": 80.4
+        },
+        "complexity_score": 61.8,
+        "complexity_breakdown": {
+          "language_entropy (30pts)": 12.1,
+          "tech_ecosystem_breadth (25pts)": 10.0,
+          "codebase_depth_files (20pts)": 15.1,
+          "age_normalized_size (15pts)": 8.2,
+          "dependency_surface (10pts)": 5.0,
+          "raw_entropy_value": 0.9642,
+          "ecosystem_count": 2
+        }
+      },
+      "classification": {
+        "difficulty": "Advanced",
+        "confidence": "HIGH"
+      },
+      "observations": [
+        "Highly active: 87 commits in the last 30 days.",
+        "Commit cadence is highly regular — sustained, consistent development pattern.",
+        "Excellent maintainer responsiveness: 53% issue resolution rate.",
+        "Large contributor base (2983) — mature, community-driven project.",
+        "Polyglot codebase (5 languages: Python, HTML, JavaScript, CSS, Shell) — requires broad technical knowledge.",
+        "Spans 2 dependency ecosystems (pip, npm) — moderate setup complexity.",
+        "Requires deep technical background — not recommended as a first OSS contribution.",
+        "5,480 files across a well-structured module system — significant navigation complexity."
+      ],
+      "error": null
+    },
+    {
+      "repository": {
+        "full_name": "sindresorhus/awesome",
+        "url": "https://github.com/sindresorhus/awesome",
+        "description": "😎 Awesome lists about all kinds of interesting topics",
+        "primary_language": "",
+        "languages": {},
+        "topics": ["awesome", "lists", "resources", "curated"],
+        "license": "CC0-1.0",
+        "is_archived": false,
+        "is_fork": false,
+        "age_days": 4010,
+        "days_since_last_push": 12,
+        "stars": 340000,
+        "forks": 28400,
+        "contributors_count": 821,
+        "commits_30d": 4,
+        "open_issues": 3,
+        "closed_issues_30d": 8,
+        "open_prs": 41,
+        "merged_prs_30d": 6,
+        "file_count": 6,
+        "repo_size_kb": 480,
+        "dependency_files": [],
+        "tech_ecosystems": [],
+        "fetch_errors": []
+      },
+      "scores": {
+        "activity_score": 21.3,
+        "activity_breakdown": {
+          "commit_volume (25pts)": 10.4,
+          "commit_regularity (20pts)": 6.2,
+          "issue_resolution_rate (20pts)": 14.8,
+          "pr_merge_rate (15pts)": 3.2,
+          "contributor_health (10pts)": 9.2,
+          "community_signal (10pts)": 9.8,
+          "recency_decay_factor": 0.765,
+          "raw_before_decay": 27.8
+        },
+        "complexity_score": 8.4,
+        "complexity_breakdown": {
+          "language_entropy (30pts)": 0.0,
+          "tech_ecosystem_breadth (25pts)": 0.0,
+          "codebase_depth_files (20pts)": 2.3,
+          "age_normalized_size (15pts)": 3.8,
+          "dependency_surface (10pts)": 0.0,
+          "raw_entropy_value": 0.0,
+          "ecosystem_count": 0
+        }
+      },
+      "classification": {
+        "difficulty": "Beginner",
+        "confidence": "HIGH"
+      },
+      "observations": [
+        "Moderate activity with 4 commits in the last 30 days.",
+        "Good issue resolution rate (73%) — responsive to community feedback.",
+        "Large contributor base (821) — community-driven curation project.",
+        "No programming languages detected — this is a documentation/list repository, not a codebase.",
+        "Zero dependency ecosystems — no build system or package management required.",
+        "Good first-contribution target: low complexity, small team, accessible codebase.",
+        "High star count (340k) reflects popularity of the list, not codebase complexity.",
+        "Contributing means adding curated links, not writing code — very low barrier to entry."
+      ],
+      "error": null
+    },
+    {
+      "repository": {
+        "full_name": "torvalds/linux",
+        "url": "https://github.com/torvalds/linux",
+        "description": "Linux kernel source tree",
+        "primary_language": "C",
+        "languages": {
+          "C": 939820400,
+          "Assembly": 41820100,
+          "Python": 12840200,
+          "Shell": 9241800,
+          "Makefile": 8120400,
+          "Perl": 4182000,
+          "C++": 2841000,
+          "Rust": 1840200
+        },
+        "topics": ["linux", "kernel", "operating-system", "c", "assembly"],
+        "license": "GPL-2.0",
+        "is_archived": false,
+        "is_fork": false,
+        "age_days": 4920,
+        "days_since_last_push": 0,
+        "stars": 185000,
+        "forks": 54200,
+        "contributors_count": 500,
+        "commits_30d": 984,
+        "open_issues": 0,
+        "closed_issues_30d": 0,
+        "open_prs": 0,
+        "merged_prs_30d": 0,
+        "file_count": 71840,
+        "repo_size_kb": 4820400,
+        "dependency_files": ["Makefile"],
+        "tech_ecosystems": ["cmake"],
+        "fetch_errors": ["issues", "prs"]
+      },
+      "scores": {
+        "activity_score": 91.2,
+        "activity_breakdown": {
+          "commit_volume (25pts)": 25.0,
+          "commit_regularity (20pts)": 18.4,
+          "issue_resolution_rate (20pts)": 10.0,
+          "pr_merge_rate (15pts)": 0.0,
+          "contributor_health (10pts)": 10.0,
+          "community_signal (10pts)": 9.8,
+          "recency_decay_factor": 1.0,
+          "raw_before_decay": 91.2
+        },
+        "complexity_score": 98.7,
+        "complexity_breakdown": {
+          "language_entropy (30pts)": 12.8,
+          "tech_ecosystem_breadth (25pts)": 5.0,
+          "codebase_depth_files (20pts)": 20.0,
+          "age_normalized_size (15pts)": 15.0,
+          "dependency_surface (10pts)": 1.25,
+          "raw_entropy_value": 1.0214,
+          "ecosystem_count": 1
+        }
+      },
+      "classification": {
+        "difficulty": "Advanced",
+        "confidence": "MEDIUM"
+      },
+      "observations": [
+        "Highly active: 984 commits in the last 30 days.",
+        "Commit cadence is highly regular — sustained, consistent development pattern.",
+        "Issues and PRs are managed via mailing list rather than GitHub — GitHub issue/PR data unavailable.",
+        "Large contributor base (500+) — the GitHub count is an undercount; real contributor base is in the thousands.",
+        "Polyglot codebase (8 languages: C, Assembly, Python, Shell, Makefile, Perl, C++, Rust) — requires broad technical knowledge.",
+        "71,840 files — the largest codebase in this analysis by far.",
+        "Requires deep technical background — not recommended as a first OSS contribution.",
+        "Note: Issue and PR data could not be fetched (Linux uses mailing lists, not GitHub Issues) — confidence is MEDIUM.",
+        "Complexity score near ceiling (98.7/100) — maximum structural complexity."
+      ],
+      "error": null
+    }
+  ]
+}
