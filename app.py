@@ -172,20 +172,11 @@ with st.sidebar:
 st.title("🔬 GitHub Repository Intelligence Analyzer")
 st.caption("Analyze repositories for activity, structural complexity, and learning difficulty.")
 
-# ── Input ─────────────────────────────────────────────────────────────────────
-default_repos = "\n".join([
-    "c2siorg/Webiu",
-    "c2siorg/GDB-UI",
-    "django/django",
-    "pallets/flask",
-    "torvalds/linux",
-])
 
 repo_input = st.text_area(
     "Enter repository URLs — one per line",
-    value=default_repos,
     height=150,
-    placeholder="https://github.com/django/django\ndjango/django\nowner/repo",
+    placeholder="django/django\npallets/flask\ntorvalds/linux",
 )
 
 btn_col, info_col = st.columns([1, 3])
@@ -361,6 +352,7 @@ if analyze_clicked:
             with dc:
                 st.markdown("##### Classification")
                 st.markdown(diff_badge(r.difficulty), unsafe_allow_html=True)
+                st.caption("Classification based on activity, complexity, and contributor signals.")
             with cc:
                 st.markdown("##### Confidence")
                 st.markdown(conf_badge(r.confidence), unsafe_allow_html=True)
@@ -368,11 +360,11 @@ if analyze_clicked:
                     st.caption(f"Data missing for: {', '.join(m.fetch_errors)}")
 
             # Row 4: observations
-            if r.observations:
+            if r.observations and any(o.strip() for o in r.observations):
                 st.markdown("---")
                 st.markdown("##### Insights")
                 for obs in r.observations:
-                    st.markdown(f"> {obs}")
+                    st.markdown(f'<div class="obs-item">{obs}</div>', unsafe_allow_html=True)
 
     # ── Errors ────────────────────────────────────────────────────────────
     if errored:

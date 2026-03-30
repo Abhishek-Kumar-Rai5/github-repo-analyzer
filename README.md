@@ -1,32 +1,10 @@
 # 🔬 GitHub Repository Intelligence Analyzer
 
-> **C2SI WebiU — GSoC 2026 Pre-Task #541, Task 2**
-
 A tool that analyzes multiple GitHub repositories and generates structured intelligence reports covering **activity**, **complexity**, and **learning difficulty** — with full scoring transparency, concurrent API fetching, and auto-generated human-readable insights.
 
 ## 🚀 Live Demo
 
 👉 **[https://github-repo-analyzer.streamlit.app](https://github-repo-analyzer.streamlit.app)**
-*(Replace with your deployed Streamlit URL after deployment)*
-
----
-
-## ✨ What Makes This Different
-
-| Feature | This Tool | Other Submissions |
-|---|---|---|
-| Concurrent API fetching | ✅ `ThreadPoolExecutor` — all repos in parallel | ❌ Sequential (slow) |
-| In-session ETag caching | ✅ `If-None-Match` — zero-cost repeat calls | ❌ None |
-| Commit regularity scoring | ✅ Cadence + volume (Shannon-inspired) | ❌ Volume only |
-| Issue resolution rate | ✅ Closed/open ratio as maintainer signal | ❌ None |
-| Shannon entropy for languages | ✅ Distribution quality, not raw count | ❌ Raw count only |
-| Age-normalized size | ✅ New repo ≠ old repo at same size | ❌ None |
-| Multi-dimensional classifier | ✅ Decision tree + confidence rating | ❌ Single threshold |
-| Radar chart per repo | ✅ Visual sub-score breakdown | ❌ Flat table only |
-| Auto-generated observations | ✅ Explains *why* in plain English | ❌ None |
-| Confidence rating | ✅ HIGH / MEDIUM / LOW per repo | ❌ None |
-| Unit test suite | ✅ 29 tests covering all formula edge cases | ❌ Mostly none |
-| Dedicated `SCORING.md` | ✅ Full mathematical rationale | ❌ None |
 
 ---
 
@@ -307,11 +285,3 @@ Full reports: [`sample_outputs/report_full.json`](./sample_outputs/report_full.j
 | Deployment | Streamlit Cloud | Free tier, 1-click, secrets management |
 
 ---
-
-## 📄 License
-
-MIT — see [LICENSE](./LICENSE)
-
----
-
-*Built for C2SI WebiU — GSoC 2026 Pre-Task #541*
