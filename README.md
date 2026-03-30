@@ -4,7 +4,7 @@ A tool that analyzes multiple GitHub repositories and generates structured intel
 
 ## 🚀 Live Demo
 
-👉 **[https://github-repo-analyzer.streamlit.app](https://github-repo-analyzer.streamlit.app)**
+👉 **[https://github-repo-analyzer.streamlit.app](https://app-repo-analyzer-jgsdh2hjmwgrbrtpbse3qb.streamlit.app/)**
 
 ---
 
