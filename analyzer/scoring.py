@@ -5,10 +5,22 @@ Design philosophy:
   - Every formula component is independently testable
   - Log scaling handles the enormous variance between repos (1 star vs 100k stars)
   - Shannon entropy for language distribution (smarter than raw language count)
+    BUT weighted less than before — entropy alone cannot capture systems projects
   - Commit cadence regularity (not just volume)
   - Issue resolution rate as maintainer responsiveness proxy
   - Age normalization: new repos aren't penalized unfairly
+  - Codebase scale bonus: catches large single-language systems projects
+    (Linux, Redis, SQLite) that score low on entropy but are objectively complex
   - Multi-dimensional difficulty classifier with confidence rating
+
+Changelog vs v1:
+  - language_entropy weight: 30 → 20 pts  (entropy ≠ difficulty for systems projects)
+  - codebase_depth weight:   20 → 28 pts  (file count is a more universal scale signal)
+  - Added scale_bonus block  (0–15 pts)   (file_count + contributor thresholds)
+  - Advanced complexity threshold: 65 → 55
+  - Advanced: added file_count >= 50,000 and contributors >= 500 as standalone triggers
+  - Beginner: added activity < 40 and file_count < 500 and stars < 5,000 guards
+  - Ecosystem detection expanded: Makefile, CMakeLists.txt, Kconfig, meson.build, Bazel
 
 See SCORING.md for full mathematical rationale.
 """
@@ -53,6 +65,10 @@ def _shannon_entropy(language_bytes: dict) -> float:
       A repo that is 40% JS + 30% Python + 30% Go has entropy ≈ 1.57 — genuinely complex.
       Raw language count would score them identically (both have "multiple languages").
 
+    LIMITATION: entropy alone cannot capture systems projects written in a single
+    dominant language (Linux = 96% C → entropy ≈ 0.3 despite being highly complex).
+    The scale_bonus in ComplexityScorer compensates for this.
+
     Returns: entropy value (0 = single language, higher = more evenly distributed)
     Max theoretical value: log2(N) where N = number of languages
     """
@@ -79,7 +95,6 @@ def _commit_regularity_score(commit_dates_iso: list, max_pts: float = 20.0) -> f
     Returns: 0–max_pts
     """
     if len(commit_dates_iso) < 2:
-        # 0 or 1 commit: no regularity to measure
         return 0.0
 
     days = []
@@ -95,16 +110,12 @@ def _commit_regularity_score(commit_dates_iso: list, max_pts: float = 20.0) -> f
     if len(days) < 2:
         return max_pts * 0.3  # Partial credit
 
-    # Coefficient of variation: std/mean — lower = more regular
     mean = statistics.mean(days)
     std = statistics.stdev(days)
     if mean == 0:
-        # All commits on the same day — no spread to measure regularity from
         return max_pts * 0.3  # Partial credit only
-    cv = std / mean
 
-    # CV of 0 = perfectly regular = full score
-    # CV of 2+ = very bursty = near-zero score
+    cv = std / mean
     regularity = max(0.0, 1.0 - (cv / 2.0))
     return regularity * max_pts
 
@@ -128,6 +139,102 @@ def _recency_decay(days_since_push: int) -> float:
     return math.exp(-days_since_push / 45.0)
 
 
+def _detect_ecosystems(dependency_files: list) -> list:
+    """
+    Map dependency/manifest filenames to canonical ecosystem names.
+    Multiple files from the same ecosystem count as ONE ecosystem.
+
+    Expanded in v2 to include systems-programming build systems:
+      Makefile, CMakeLists.txt, Kconfig → make/cmake/kbuild
+      meson.build → meson
+      BUILD / WORKSPACE → bazel
+
+    Returns: list of distinct ecosystem strings.
+    """
+    MANIFEST_TO_ECOSYSTEM = {
+        # JavaScript / Node
+        "package.json":         "npm",
+        "yarn.lock":            "npm",
+        "pnpm-lock.yaml":       "npm",
+        "package-lock.json":    "npm",
+        ".npmrc":               "npm",
+        # Python
+        "requirements.txt":     "pip",
+        "Pipfile":              "pip",
+        "Pipfile.lock":         "pip",
+        "pyproject.toml":       "pip",
+        "setup.py":             "pip",
+        "setup.cfg":            "pip",
+        # Rust
+        "Cargo.toml":           "cargo",
+        "Cargo.lock":           "cargo",
+        # Go
+        "go.mod":               "go",
+        "go.sum":               "go",
+        # Java / Kotlin
+        "pom.xml":              "maven",
+        "build.gradle":         "gradle",
+        "build.gradle.kts":     "gradle",
+        "settings.gradle":      "gradle",
+        # Ruby
+        "Gemfile":              "gem",
+        "Gemfile.lock":         "gem",
+        # PHP
+        "composer.json":        "composer",
+        "composer.lock":        "composer",
+        # .NET / C#
+        "*.csproj":             "nuget",
+        "*.fsproj":             "nuget",
+        "packages.config":      "nuget",
+        # Swift / ObjC
+        "Podfile":              "cocoapods",
+        "Package.swift":        "spm",
+        # Dart / Flutter
+        "pubspec.yaml":         "pub",
+        # Elixir
+        "mix.exs":              "hex",
+        # Haskell
+        "stack.yaml":           "stack",
+        "*.cabal":              "cabal",
+        # Docker
+        "Dockerfile":           "docker",
+        "docker-compose.yml":   "docker",
+        "docker-compose.yaml":  "docker",
+        # Nix
+        "flake.nix":            "nix",
+        "default.nix":          "nix",
+        # Systems / C / C++ build systems  ← NEW in v2
+        "Makefile":             "make",
+        "makefile":             "make",
+        "GNUmakefile":          "make",
+        "CMakeLists.txt":       "cmake",
+        "Kconfig":              "kbuild",
+        "meson.build":          "meson",
+        "meson_options.txt":    "meson",
+        "BUILD":                "bazel",
+        "WORKSPACE":            "bazel",
+        "WORKSPACE.bazel":      "bazel",
+        # Terraform / Infrastructure
+        "*.tf":                 "terraform",
+        # Ansible
+        "playbook.yml":         "ansible",
+    }
+
+    ecosystems = set()
+    for fname in dependency_files:
+        # Exact match first
+        if fname in MANIFEST_TO_ECOSYSTEM:
+            ecosystems.add(MANIFEST_TO_ECOSYSTEM[fname])
+            continue
+        # Wildcard suffix match
+        for pattern, eco in MANIFEST_TO_ECOSYSTEM.items():
+            if pattern.startswith("*") and fname.endswith(pattern[1:]):
+                ecosystems.add(eco)
+                break
+
+    return list(ecosystems)
+
+
 # ── Activity Scorer ───────────────────────────────────────────────────────────
 
 class ActivityScorer:
@@ -135,15 +242,15 @@ class ActivityScorer:
     Measures how alive and actively maintained a repository is right now.
 
     Score components (total = 100 pts before decay):
-      commit_volume     25 pts  — raw commits in last 30 days (log scaled)
-      commit_regularity 20 pts  — how evenly commits are spread (unique signal)
-      issue_resolution  20 pts  — closed/(closed+open) ratio = maintainer responsiveness
-      pr_merge_rate     15 pts  — PRs actually getting merged = code moving forward
-      contributor_health 10 pts — team size (log scaled)
-      community_signal  10 pts  — stars + forks (log scaled, weak signal)
+      commit_volume      25 pts  — raw commits in last 30 days (log scaled)
+      commit_regularity  20 pts  — how evenly commits are spread (unique signal)
+      issue_resolution   20 pts  — closed/(closed+open) ratio = maintainer responsiveness
+      pr_merge_rate      15 pts  — PRs actually getting merged = code moving forward
+      contributor_health 10 pts  — team size (log scaled)
+      community_signal   10 pts  — stars + forks (log scaled, weak signal)
 
     Final score: weighted_sum × recency_decay(days_since_push)
-    This means a dormant repo cannot score high even with great historical metrics.
+    A dormant repo cannot score high even with great historical metrics.
     """
 
     def score(self, m: RepoMetrics) -> ScoreBreakdown:
@@ -152,30 +259,24 @@ class ActivityScorer:
         # 1. Commit volume (25 pts) — log scaled, ceiling at 200 commits/30d
         commit_vol = _log_scale(m.commits_30d, 200, 25.0)
 
-        # 2. Commit regularity (20 pts) — unique: measures cadence, not just volume
+        # 2. Commit regularity (20 pts)
         commit_reg = _commit_regularity_score(m.commit_dates_30d, 20.0)
-        # If no commits, no regularity
         if m.commits_30d == 0:
             commit_reg = 0.0
 
         # 3. Issue resolution rate (20 pts)
-        # Ratio: closed_30d / (closed_30d + open_issues)
-        # A repo that closes issues quickly is actively maintained
         total_issue_activity = m.closed_issues_30d + max(m.open_issues, 0)
         if total_issue_activity > 0:
             resolution_ratio = m.closed_issues_30d / total_issue_activity
         else:
-            # No issue activity at all — neutral (not penalized, not rewarded)
-            resolution_ratio = 0.5
+            resolution_ratio = 0.5  # neutral — repo may not use GitHub Issues
         issue_res = resolution_ratio * 20.0
 
         # 4. PR merge rate (15 pts)
-        # merged_prs_30d / max(open_prs, 1) — how quickly PRs land
         if m.open_prs + m.merged_prs_30d > 0:
             pr_ratio = m.merged_prs_30d / (m.merged_prs_30d + max(m.open_prs, 1))
         else:
             pr_ratio = 0.0
-        # Also reward sheer volume of merges (log scaled)
         pr_volume = _log_scale(m.merged_prs_30d, 50, 7.5)
         pr_score = (pr_ratio * 7.5) + pr_volume
 
@@ -183,7 +284,6 @@ class ActivityScorer:
         contributor_score = _log_scale(m.contributors_count, 500, 10.0)
 
         # 6. Community signal (10 pts) — log scaled stars + forks
-        # Stars ceiling at 50,000 (beyond that, it's more fame than activity)
         stars_score = _log_scale(m.stars, 50000, 6.0)
         forks_score = _log_scale(m.forks, 10000, 4.0)
         community = stars_score + forks_score
@@ -195,14 +295,14 @@ class ActivityScorer:
         final = min(100.0, raw_total * decay)
 
         bd.components = {
-            "commit_volume (25pts)": round(commit_vol, 2),
-            "commit_regularity (20pts)": round(commit_reg, 2),
+            "commit_volume (25pts)":        round(commit_vol, 2),
+            "commit_regularity (20pts)":    round(commit_reg, 2),
             "issue_resolution_rate (20pts)": round(issue_res, 2),
-            "pr_merge_rate (15pts)": round(pr_score, 2),
-            "contributor_health (10pts)": round(contributor_score, 2),
-            "community_signal (10pts)": round(community, 2),
-            "recency_decay_factor": round(decay, 3),
-            "raw_before_decay": round(raw_total, 2),
+            "pr_merge_rate (15pts)":        round(pr_score, 2),
+            "contributor_health (10pts)":   round(contributor_score, 2),
+            "community_signal (10pts)":     round(community, 2),
+            "recency_decay_factor":         round(decay, 3),
+            "raw_before_decay":             round(raw_total, 2),
         }
         bd.total = round(final, 2)
         return bd
@@ -215,18 +315,26 @@ class ComplexityScorer:
     Measures how structurally complex a codebase is to understand and contribute to.
 
     Score components (total = 100 pts):
-      language_entropy   30 pts  — Shannon entropy of language distribution
-      tech_breadth       25 pts  — number of distinct dependency ecosystems (npm, pip, cargo...)
-      codebase_depth     20 pts  — log-scaled file count
-      age_normalized_size 15 pts — repo_size_kb / age_days (avoids penalizing old repos)
-      dependency_surface 10 pts  — count of distinct manifest files
+      language_entropy    20 pts  — Shannon entropy of language distribution
+                                    (reduced from 30 → entropy ≠ difficulty for
+                                     single-language systems projects like Linux/Redis)
+      tech_breadth        25 pts  — number of distinct dependency ecosystems
+      codebase_depth      28 pts  — log-scaled file count
+                                    (increased from 20 → most universal scale signal)
+      age_normalized_size 15 pts  — repo_size_kb / age_days
+      dependency_surface  10 pts  — count of distinct manifest files
+      scale_bonus       0–15 pts  — flat bonus for very large file counts and
+                                    very large contributor counts; compensates for
+                                    single-language systems projects that score low
+                                    on entropy but are objectively hard to navigate
 
-    Why Shannon entropy instead of raw language count?
-      See _shannon_entropy() docstring above. Raw count is a poor proxy.
+    Total possible: ~113 pts, capped at 100.
 
-    Why age-normalized size?
-      A 5-year-old repo with 50MB is normal. A 1-month-old repo with 50MB is unusual.
-      Age normalization catches genuinely large-for-their-age repos.
+    v2 Changes:
+      - language_entropy: 30 → 20 pts
+      - codebase_depth:   20 → 28 pts
+      - Added scale_bonus block
+      - Ecosystem detection expanded (see _detect_ecosystems)
     """
 
     # Maximum expected entropy for normalization (~log2(10 languages) = 3.32)
@@ -235,26 +343,29 @@ class ComplexityScorer:
     def score(self, m: RepoMetrics) -> ScoreBreakdown:
         bd = ScoreBreakdown()
 
-        # 1. Language entropy (30 pts)
+        # 1. Language entropy (20 pts) — reduced from 30
+        #    Entropy rewards polyglot repos but cannot distinguish a large C project
+        #    from a trivial C project. scale_bonus compensates below.
         entropy = _shannon_entropy(m.languages)
-        lang_score = min(entropy / self.MAX_ENTROPY, 1.0) * 30.0
-        # Bonus for simply having languages at all (mono-language repos still start at 0)
+        lang_score = min(entropy / self.MAX_ENTROPY, 1.0) * 20.0
         if not m.languages and m.primary_language:
-            lang_score = 5.0  # Single language, at least confirmed
+            lang_score = 3.0  # Single confirmed language — minimal credit
 
         # 2. Tech breadth — distinct ecosystems (25 pts)
-        # npm + pip + cargo = 3 ecosystems = genuinely complex
-        # Just package.json + package-lock.json = 1 ecosystem (npm)
-        ecosystem_count = len(set(m.tech_ecosystems))
+        #    Use _detect_ecosystems() to collapse multiple files into one ecosystem.
+        #    Expanded in v2 to include Makefile, CMakeLists.txt, Kconfig, Bazel, Meson.
+        ecosystems = _detect_ecosystems(m.dependency_files)
+        ecosystem_count = len(ecosystems)
         tech_score = _linear_scale(ecosystem_count, 5, 25.0)
 
-        # 3. Codebase depth — file count (20 pts)
-        # Log scaled, ceiling at 10,000 files
-        depth_score = _log_scale(m.file_count, 10000, 20.0)
+        # 3. Codebase depth — file count (28 pts) — increased from 20
+        #    Log scaled, ceiling at 10,000 files.
+        #    This is the most universal proxy for navigational complexity.
+        depth_score = _log_scale(m.file_count, 10000, 28.0)
 
         # 4. Age-normalized size (15 pts)
-        # size_per_day = repo_size_kb / age_days
-        # Ceiling at 100 KB/day (tensorflow = ~6,000 KB/day = max)
+        #    size_per_day = repo_size_kb / age_days
+        #    A 1-month-old 50MB repo is more unusual than a 5-year-old 50MB repo.
         if m.age_days > 0:
             size_per_day = m.repo_size_kb / m.age_days
         else:
@@ -262,20 +373,46 @@ class ComplexityScorer:
         age_size_score = _log_scale(size_per_day, 100, 15.0)
 
         # 5. Dependency surface (10 pts)
-        # Raw count of distinct manifest files found in root
         dep_count = len(m.dependency_files)
         dep_score = _linear_scale(dep_count, 8, 10.0)
 
-        total = lang_score + tech_score + depth_score + age_size_score + dep_score
+        # 6. Scale bonus (0–15 pts) — NEW in v2
+        #    Flat bonus for properties that reliably indicate Advanced complexity
+        #    regardless of language distribution:
+        #      a) Very large file counts (10k+ files = massive, 3k+ = significant)
+        #      b) Very large contributor bases (process complexity compounds technical)
+        #    This ensures Linux (70k files, 5k contributors) scores Advanced even though
+        #    it is ~96% C (entropy ≈ 0.3, lang_score ≈ 1.8 — nearly nothing).
+        scale_bonus = 0.0
+
+        if m.file_count >= 50000:
+            scale_bonus += 10.0
+        elif m.file_count >= 10000:
+            scale_bonus += 7.0
+        elif m.file_count >= 3000:
+            scale_bonus += 4.0
+        elif m.file_count >= 1000:
+            scale_bonus += 2.0
+
+        if m.contributors_count >= 500:
+            scale_bonus += 5.0
+        elif m.contributors_count >= 100:
+            scale_bonus += 3.0
+        elif m.contributors_count >= 50:
+            scale_bonus += 1.5
+
+        total = lang_score + tech_score + depth_score + age_size_score + dep_score + scale_bonus
 
         bd.components = {
-            "language_entropy (30pts)": round(lang_score, 2),
+            "language_entropy (20pts)":     round(lang_score, 2),
             "tech_ecosystem_breadth (25pts)": round(tech_score, 2),
-            "codebase_depth_files (20pts)": round(depth_score, 2),
-            "age_normalized_size (15pts)": round(age_size_score, 2),
-            "dependency_surface (10pts)": round(dep_score, 2),
-            "raw_entropy_value": round(entropy, 4),
-            "ecosystem_count": ecosystem_count,
+            "codebase_depth_files (28pts)": round(depth_score, 2),
+            "age_normalized_size (15pts)":  round(age_size_score, 2),
+            "dependency_surface (10pts)":   round(dep_score, 2),
+            "scale_bonus (0-15pts)":        round(scale_bonus, 2),
+            "raw_entropy_value":            round(entropy, 4),
+            "ecosystem_count":              ecosystem_count,
+            "ecosystems_detected":          ecosystems,
         }
         bd.total = round(min(100.0, total), 2)
         return bd
@@ -287,36 +424,63 @@ class DifficultyClassifier:
     """
     Multi-dimensional classification — NOT a simple combined score threshold.
 
-    Why not a simple threshold?
-      Everyone else does: combined = activity*0.4 + complexity*0.6; if < 30 → Beginner.
-      This produces absurd results: a dormant, zero-complexity repo with 10k stars
-      might score "Intermediate" purely on activity from old data.
+    v1 Problem:
+      The original thresholds (Advanced: complexity >= 65) were too high.
+      The Linux kernel scores ~51 on complexity because it is 96% C (low entropy),
+      even though it has 70,000+ files and 5,000+ contributors.
+      Result: Linux was classified "Intermediate" — clearly wrong.
 
-    Our decision tree:
-      BEGINNER:      complexity < 25 AND contributors ≤ 8 AND age > 14 days
-      ADVANCED:      complexity ≥ 65 OR (contributors ≥ 50 AND activity ≥ 55)
-      INTERMEDIATE:  everything else
+    v2 Fix:
+      - Advanced complexity threshold: 65 → 55
+      - Added standalone Advanced triggers: file_count >= 50,000 and
+        contributors >= 500 (process complexity alone = Advanced)
+      - Relaxed contributor threshold for Advanced: 50 AND activity >= 45
+        (was activity >= 55 — too strict for large but slower projects)
+      - Beginner: added activity < 40, file_count < 500, stars < 5,000 guards
+        to prevent mis-classifying legitimate Intermediate solo projects
+
+    Decision tree:
+
+      TOO NEW:      age_days <= 14
+      ADVANCED:     complexity >= 55
+                    OR (contributors >= 50 AND activity >= 45)
+                    OR (complexity >= 40 AND contributors >= 200)
+                    OR file_count >= 50,000          ← NEW
+                    OR contributors >= 500           ← NEW
+      BEGINNER:     complexity < 30
+                    AND contributors <= 5
+                    AND activity < 40               ← NEW
+                    AND file_count < 500            ← NEW
+                    AND stars < 5,000               ← NEW
+                    AND age_days > 14
+      INTERMEDIATE: everything else
 
     Confidence rating:
-      HIGH:   all key metrics available, scores far from thresholds
+      HIGH:   all key metrics available, scores far from thresholds (>5 pts)
       MEDIUM: some fetch errors OR scores within 5 pts of a threshold
-      LOW:    many fetch errors OR repo is archived/missing data
+      LOW:    many fetch errors OR repo archived / missing data
     """
 
     def classify(self, activity: float, complexity: float, m: RepoMetrics) -> tuple[str, str]:
         """Returns (difficulty_label, confidence_level)."""
 
         # ── Determine difficulty ──────────────────────────────────────────────
-        is_beginner = (
-            complexity < 25
-            and m.contributors_count <= 8
-            and m.age_days > 14        # brand new repos get no classification
-        )
 
         is_advanced = (
-            complexity >= 65
-            or (m.contributors_count >= 50 and activity >= 55)
-            or (complexity >= 50 and m.contributors_count >= 100)
+            complexity >= 55                                        # lowered from 65
+            or (m.contributors_count >= 50 and activity >= 45)     # relaxed activity req
+            or (complexity >= 40 and m.contributors_count >= 200)  # lowered complexity
+            or m.file_count >= 50000                               # NEW: massive codebase
+            or m.contributors_count >= 500                         # NEW: huge community
+        )
+
+        is_beginner = (
+            complexity < 30                    # slightly raised from 25
+            and m.contributors_count <= 5      # tightened from 8
+            and activity < 40                  # NEW: can't be secretly very active
+            and m.file_count < 500             # NEW: even a solo project with 2k files isn't Beginner
+            and m.stars < 5000                 # NEW: highly starred repos have earned some credibility
+            and m.age_days > 14
         )
 
         if m.age_days <= 14:
@@ -335,9 +499,9 @@ class DifficultyClassifier:
 
         # Near a threshold (within 5 pts)
         near_threshold = (
-            abs(complexity - 25) < 5   # near Beginner/Intermediate boundary
-            or abs(complexity - 65) < 5  # near Intermediate/Advanced boundary
-            or abs(activity - 55) < 5
+            abs(complexity - 30) < 5    # near Beginner/Intermediate boundary
+            or abs(complexity - 55) < 5  # near Intermediate/Advanced boundary (updated)
+            or abs(activity - 45) < 5   # near contributor+activity Advanced trigger
         )
 
         if m.is_archived:
@@ -358,7 +522,6 @@ def generate_observations(m: RepoMetrics, activity: float, complexity: float,
                            activity_bd: ScoreBreakdown, difficulty: str) -> list[str]:
     """
     Auto-generate human-readable insights about each repository.
-    This is what makes reports feel intelligent rather than just numerical.
     """
     obs = []
 
@@ -393,6 +556,8 @@ def generate_observations(m: RepoMetrics, activity: float, complexity: float,
         obs.append("Solo maintainer project — no bus-factor resilience.")
     elif m.contributors_count <= 5:
         obs.append(f"Small team ({m.contributors_count} contributors) — intimate but potentially fragile.")
+    elif m.contributors_count >= 500:
+        obs.append(f"Massive contributor base ({m.contributors_count}) — one of the largest OSS communities; process complexity is significant.")
     elif m.contributors_count >= 100:
         obs.append(f"Large contributor base ({m.contributors_count}) — mature, community-driven project.")
 
@@ -403,9 +568,22 @@ def generate_observations(m: RepoMetrics, activity: float, complexity: float,
     elif len(m.languages) == 1:
         obs.append(f"Single-language codebase ({m.primary_language}) — easier to get started.")
 
+    # Scale signals (new in v2)
+    if m.file_count >= 50000:
+        obs.append(f"Enormous codebase ({m.file_count:,} files) — navigating the source tree alone is a significant challenge.")
+    elif m.file_count >= 10000:
+        obs.append(f"Large codebase ({m.file_count:,} files) — significant investment needed to understand the architecture.")
+
     # Tech ecosystem breadth
-    if len(m.tech_ecosystems) >= 3:
-        obs.append(f"Spans {len(m.tech_ecosystems)} dependency ecosystems ({', '.join(m.tech_ecosystems)}) — significant setup complexity.")
+    ecosystems = _detect_ecosystems(m.dependency_files)
+    if len(ecosystems) >= 3:
+        obs.append(f"Spans {len(ecosystems)} dependency ecosystems ({', '.join(ecosystems)}) — significant setup complexity.")
+
+    # Systems build system detection (new in v2)
+    systems_build = {"make", "cmake", "kbuild", "meson", "bazel"}
+    detected_systems = systems_build & set(ecosystems)
+    if detected_systems:
+        obs.append(f"Uses systems-level build tooling ({', '.join(detected_systems)}) — requires familiarity beyond standard package managers.")
 
     # Difficulty-specific observations
     if difficulty == "Beginner":
@@ -414,6 +592,8 @@ def generate_observations(m: RepoMetrics, activity: float, complexity: float,
         obs.append("Requires deep technical background — not recommended as a first OSS contribution.")
     elif difficulty == "Intermediate":
         obs.append("Reasonable entry point for developers with some OSS experience.")
+    elif difficulty == "Too New":
+        obs.append("Repository is too new to classify reliably — revisit after at least 2 weeks of activity.")
 
     # Archived notice
     if m.is_archived:
@@ -426,8 +606,10 @@ def generate_observations(m: RepoMetrics, activity: float, complexity: float,
     # Data quality warnings
     if m.fetch_errors:
         obs.append(f"Note: Some data could not be fetched ({', '.join(m.fetch_errors)}) — scores may be understated.")
+
     if not obs:
         obs.append("No strong activity or complexity signals detected — repository appears stable and straightforward.")
+
     return obs
 
 

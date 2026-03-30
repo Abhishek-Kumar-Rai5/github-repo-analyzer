@@ -144,7 +144,7 @@ pytest tests/ -v
 
 ---
 
-## 📊 Scoring Formulas (Summary)
+#### 📊 Scoring Formulas (Summary)
 
 > For the complete mathematical rationale, see **[SCORING.md](./SCORING.md)**
 
@@ -170,31 +170,35 @@ Measures how structurally complex a codebase is to **understand and contribute t
 
 | Component | Max Pts | Formula |
 |---|---|---|
-| Language entropy | 30 | Shannon entropy of language byte distribution |
-| Tech ecosystem breadth | 25 | Distinct dependency ecosystems (npm, pip, cargo, go...) |
-| Codebase depth | 20 | `log10(file_count + 1) / log10(10001) × 20` |
+| Language entropy | 20 | Shannon entropy of language byte distribution |
+| Tech ecosystem breadth | 25 | Distinct dependency ecosystems (npm, pip, cargo, make, cmake...) |
+| Codebase depth | 28 | `log10(file_count + 1) / log10(10001) × 28` |
 | Age-normalized size | 15 | `log10(size_kb/age_days + 1) / log10(101) × 15` |
 | Dependency surface | 10 | Count of manifest files in root |
+| Scale bonus | 0–15 | Flat bonus for large file counts (≥1k–50k files) and large contributor bases (≥50–500) |
 
-**Key insight:** Shannon entropy distinguishes a repo that is 90% JS + 10% CSS (entropy ≈ 0.47) from one that is 40% JS + 30% Python + 30% Go (entropy ≈ 1.57) — raw language count treats them identically.
+**Key insight:** Shannon entropy distinguishes a repo that is 90% JS + 10% CSS (entropy ≈ 0.47) from one that is 40% JS + 30% Python + 30% Go (entropy ≈ 1.57) — raw language count treats them identically. The scale bonus ensures large single-language systems projects (e.g. Linux: ~96% C, low entropy) still score correctly.
 
 ### Difficulty Classification
 
 **Not a simple threshold** — a multi-dimensional decision tree:
-
 ```
-age ≤ 14 days          → Too New
-complexity ≥ 65
-  OR (contributors ≥ 50 AND activity ≥ 55)
-  OR (complexity ≥ 50 AND contributors ≥ 100)   → Advanced
-complexity < 25
-  AND contributors ≤ 8
-  AND age > 14 days                              → Beginner
-otherwise                                        → Intermediate
+age ≤ 14 days                                          → Too New
+complexity ≥ 55
+  OR (contributors ≥ 50 AND activity ≥ 45)
+  OR (complexity ≥ 40 AND contributors ≥ 200)
+  OR file_count ≥ 50,000
+  OR contributors ≥ 500                                → Advanced
+complexity < 30
+  AND contributors ≤ 5
+  AND activity < 40
+  AND file_count < 500
+  AND stars < 5,000
+  AND age > 14 days                                    → Beginner
+otherwise                                              → Intermediate
 ```
 
 Each classification also carries a **confidence rating** (HIGH / MEDIUM / LOW) based on data completeness and proximity to decision boundaries.
-
 ---
 
 ## 📋 Sample Analysis (5 Repositories)
